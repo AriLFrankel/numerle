@@ -1,5 +1,5 @@
 import { KeyValue } from '../../lib/keyboard'
-import { getStatuses } from '../../lib/statuses'
+import { getStatuses, StatusObj } from '../../lib/statuses'
 import { Key } from './Key'
 import { useEffect } from 'react'
 
@@ -8,10 +8,23 @@ type Props = {
   onDelete: () => void
   onEnter: () => void
   guesses: string[]
+  winningGuess: string
+  prevStatuses: StatusObj
 }
 
-export const Keyboard = ({ onChar, onDelete, onEnter, guesses }: Props) => {
-  const charStatuses = getStatuses(guesses)
+export const Keyboard = ({
+  onChar,
+  onDelete,
+  onEnter,
+  guesses,
+  winningGuess,
+  prevStatuses,
+}: Props) => {
+  const charStatuses = getStatuses(
+    guesses.slice(0, 1),
+    winningGuess,
+    prevStatuses
+  )
 
   const onClick = (value: KeyValue) => {
     if (value === 'ENTER') {
@@ -30,8 +43,11 @@ export const Keyboard = ({ onChar, onDelete, onEnter, guesses }: Props) => {
       } else if (e.code === 'Backspace') {
         onDelete()
       } else {
-        const key = e.key.toUpperCase()
-        if (key.length === 1 && key >= 'A' && key <= 'Z') {
+        const key = e.key
+        if (
+          (key.length === 1 && key >= '1' && key <= '9') ||
+          ['*', '/', '+', '-'].indexOf(key) >= 0
+        ) {
           onChar(key)
         }
       }
@@ -43,45 +59,30 @@ export const Keyboard = ({ onChar, onDelete, onEnter, guesses }: Props) => {
   }, [onEnter, onDelete, onChar])
 
   return (
-    <div>
-      <div className="flex justify-center mb-1">
-        <Key value="Q" onClick={onClick} status={charStatuses['Q']} />
-        <Key value="W" onClick={onClick} status={charStatuses['W']} />
-        <Key value="E" onClick={onClick} status={charStatuses['E']} />
-        <Key value="R" onClick={onClick} status={charStatuses['R']} />
-        <Key value="T" onClick={onClick} status={charStatuses['T']} />
-        <Key value="Y" onClick={onClick} status={charStatuses['Y']} />
-        <Key value="U" onClick={onClick} status={charStatuses['U']} />
-        <Key value="I" onClick={onClick} status={charStatuses['I']} />
-        <Key value="O" onClick={onClick} status={charStatuses['O']} />
-        <Key value="P" onClick={onClick} status={charStatuses['P']} />
-      </div>
-      <div className="flex justify-center mb-1">
-        <Key value="A" onClick={onClick} status={charStatuses['A']} />
-        <Key value="S" onClick={onClick} status={charStatuses['S']} />
-        <Key value="D" onClick={onClick} status={charStatuses['D']} />
-        <Key value="F" onClick={onClick} status={charStatuses['F']} />
-        <Key value="G" onClick={onClick} status={charStatuses['G']} />
-        <Key value="H" onClick={onClick} status={charStatuses['H']} />
-        <Key value="J" onClick={onClick} status={charStatuses['J']} />
-        <Key value="K" onClick={onClick} status={charStatuses['K']} />
-        <Key value="L" onClick={onClick} status={charStatuses['L']} />
+    <>
+      <div className="flex justify-center">
+        <Key value="1" onClick={onClick} status={charStatuses['1']} />
+        <Key value="2" onClick={onClick} status={charStatuses['2']} />
+        <Key value="3" onClick={onClick} status={charStatuses['3']} />
+        <Key value="4" onClick={onClick} status={charStatuses['4']} />
+        <Key value="5" onClick={onClick} status={charStatuses['5']} />
+        <Key value="6" onClick={onClick} status={charStatuses['6']} />
+        <Key value="7" onClick={onClick} status={charStatuses['7']} />
+        <Key value="8" onClick={onClick} status={charStatuses['8']} />
+        <Key value="9" onClick={onClick} status={charStatuses['9']} />
       </div>
       <div className="flex justify-center">
-        <Key width={65.4} value="ENTER" onClick={onClick}>
-          Enter
-        </Key>
-        <Key value="Z" onClick={onClick} status={charStatuses['Z']} />
-        <Key value="X" onClick={onClick} status={charStatuses['X']} />
-        <Key value="C" onClick={onClick} status={charStatuses['C']} />
-        <Key value="V" onClick={onClick} status={charStatuses['V']} />
-        <Key value="B" onClick={onClick} status={charStatuses['B']} />
-        <Key value="N" onClick={onClick} status={charStatuses['N']} />
-        <Key value="M" onClick={onClick} status={charStatuses['M']} />
-        <Key width={65.4} value="DELETE" onClick={onClick}>
+        <Key value="DELETE" onClick={onClick}>
           Delete
         </Key>
+        <Key value="*" onClick={onClick} status="operator" />
+        <Key value="/" onClick={onClick} status="operator" />
+        <Key value="+" onClick={onClick} status="operator" />
+        <Key value="-" onClick={onClick} status="operator" />
+        <Key value="ENTER" onClick={onClick}>
+          Enter
+        </Key>
       </div>
-    </div>
+    </>
   )
 }

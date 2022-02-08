@@ -2,13 +2,73 @@ import { Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { Cell } from '../grid/Cell'
 import { XCircleIcon } from '@heroicons/react/outline'
-
+import { Key } from '../keyboard/Key'
+import { StatusObj, getStatuses } from '../../lib/statuses'
+import { KeyValue } from '../../lib/keyboard'
 type Props = {
   isOpen: boolean
   handleClose: () => void
+  prevStatuses: StatusObj
 }
 
-export const InfoModal = ({ isOpen, handleClose }: Props) => {
+const infoTOTAL = 10
+const infoGUESS = '5+6-4/2+1'
+
+const infoCopy = [
+  {
+    guess: '1+2+3+4*1',
+    statuses: getStatuses(['1+2+3+4*1'], infoGUESS, {}),
+    message:
+      'There is one 2 and one 4 in the solution. There is at least one 1, but not two of them. There are no 3s',
+  },
+  {
+    guess: '9/3-1+4*2',
+    statuses: getStatuses(['9/3-1+4*2'], infoGUESS, {}),
+    message:
+      'There is one 2, one 1 and one 4 in the solution. There are no 9s nor 3s',
+  },
+  {
+    guess: '4*2+1+6-5',
+    statuses: getStatuses(['4*2+1+6-5'], infoGUESS, {}),
+    message:
+      'There is one 4, one 2, one 1, one 6 and one 5. This is one of the winning solutions',
+  },
+  {
+    guess: '5*6/2-4-1',
+    statuses: getStatuses(['5*6/2-4-1'], infoGUESS, {}),
+    message: 'This is also a winning solution',
+  },
+]
+
+const SampleRow = ({ guess }: { guess: string }) => (
+  <div className="flex justify-center items-center mb-1 mt-4">
+    {Array.from(guess).map((char, i) => (
+      <Cell
+        key={`${guess}${char}${i}}`}
+        value={char}
+        isOperator={['+', '-', '/', '*'].includes(char)}
+      />
+    ))}
+  </div>
+)
+
+const MiniKeyboard = ({ statuses }: { statuses: StatusObj }) => {
+  const onClick = () => {}
+  return (
+    <div className="flex justify-center items-center">
+      {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((char, i) => (
+        <Key
+          value={char as KeyValue}
+          status={statuses[char]}
+          onClick={onClick}
+          key={char + statuses[char] + i}
+        />
+      ))}
+    </div>
+  )
+}
+
+export const InfoModal = ({ isOpen, handleClose, prevStatuses }: Props) => {
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog
@@ -62,43 +122,28 @@ export const InfoModal = ({ isOpen, handleClose }: Props) => {
                   </Dialog.Title>
                   <div className="mt-2">
                     <p className="text-sm text-gray-500">
-                      Guess the WORDLE in 6 tries. After each guess, the color
-                      of the tiles will change to show how close your guess was
-                      to the word.
+                      A NUMERLE is a combination of integers that can be
+                      combined to arrive at the TOTAL. Guess the NUMERLE in 6
+                      tries. After each guess, the color of the keys will change
+                      to show how close your guess was to the right combination
+                      of numbers.
                     </p>
-
-                    <div className="flex justify-center mb-1 mt-4">
-                      <Cell value="W" status="correct" />
-                      <Cell value="E" />
-                      <Cell value="A" />
-                      <Cell value="R" />
-                      <Cell value="Y" />
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      The letter W is in the word and in the correct spot.
-                    </p>
-
-                    <div className="flex justify-center mb-1 mt-4">
-                      <Cell value="P" />
-                      <Cell value="I" />
-                      <Cell value="L" status="present" />
-                      <Cell value="O" />
-                      <Cell value="T" />
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      The letter L is in the word but in the wrong spot.
-                    </p>
-
-                    <div className="flex justify-center mb-1 mt-4">
-                      <Cell value="V" />
-                      <Cell value="A" />
-                      <Cell value="G" />
-                      <Cell value="U" status="absent" />
-                      <Cell value="E" />
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      The letter U is not in the word in any spot.
-                    </p>
+                    <h4>Total: {infoTOTAL}</h4>
+                    {infoCopy.map(({ guess, message, statuses }, i) => (
+                      <>
+                        <SampleRow key={`${guess}${i}`} guess={guess} />
+                        <p
+                          key={`text-${message}`}
+                          className="text-sm text-gray-500"
+                        >
+                          {message}
+                        </p>
+                        <MiniKeyboard
+                          key={`keyboard-${message}`}
+                          statuses={statuses}
+                        />
+                      </>
+                    ))}
                   </div>
                 </div>
               </div>

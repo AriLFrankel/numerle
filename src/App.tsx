@@ -1,4 +1,4 @@
-import { InformationCircleIcon } from '@heroicons/react/outline'
+import { InformationCircleIcon, RefreshIcon } from '@heroicons/react/outline'
 import { ChartBarIcon } from '@heroicons/react/outline'
 import { useState, useEffect } from 'react'
 import { Alert } from './components/alerts/Alert'
@@ -8,49 +8,43 @@ import { AboutModal } from './components/modals/AboutModal'
 import { InfoModal } from './components/modals/InfoModal'
 import { WinModal } from './components/modals/WinModal'
 import { StatsModal } from './components/modals/StatsModal'
-import { isWordInWordList, isWinningWord, solution } from './lib/words'
 import { addStatsForCompletedGame, loadStats } from './lib/stats'
-import {
-  loadGameStateFromLocalStorage,
-  saveGameStateToLocalStorage,
-} from './lib/localStorage'
+import { isIntegerUnder10, getNumber, compareGuesses } from './lib/arithmetic'
+import { getStatuses, StatusObj } from './lib/statuses'
 
 function App() {
   const [currentGuess, setCurrentGuess] = useState('')
-  const [isGameWon, setIsGameWon] = useState(false)
   const [isWinModalOpen, setIsWinModalOpen] = useState(false)
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false)
-  const [isNotEnoughLetters, setIsNotEnoughLetters] = useState(false)
+  const [isIncompleteGuess, setIsIncompleteGuess] = useState(false)
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false)
-  const [isWordNotFoundAlertOpen, setIsWordNotFoundAlertOpen] = useState(false)
+  const [isIncorrectTotalOpen, setIsIncorrectTotalOpen] = useState(false)
   const [isGameLost, setIsGameLost] = useState(false)
   const [shareComplete, setShareComplete] = useState(false)
-  const [guesses, setGuesses] = useState<string[]>(() => {
-    const loaded = loadGameStateFromLocalStorage()
-    if (loaded?.solution !== solution) {
-      return []
-    }
-    if (loaded.guesses.includes(solution)) {
-      setIsGameWon(true)
-    }
-    return loaded.guesses
-  })
+  const [guesses, setGuesses] = useState<string[]>(() => [])
+  const [prevStatuses, setPrevStatuses] = useState<StatusObj>(() => ({}))
+  const [shareStatuses, setShareStatuses] = useState<StatusObj[]>(() => [])
 
   const [stats, setStats] = useState(() => loadStats())
 
-  useEffect(() => {
-    saveGameStateToLocalStorage({ guesses, solution })
-  }, [guesses])
+  const [GUESS, setGUESS] = useState(String)
+  const [TOTAL, setTOTAL] = useState(Number)
 
-  useEffect(() => {
-    if (isGameWon) {
-      setIsWinModalOpen(true)
-    }
-  }, [isGameWon])
+  const setupGame = () => {
+    const { guess, total } = getNumber()
+    setTOTAL(total)
+    setGUESS(guess)
+  }
+
+  useEffect(setupGame, [])
 
   const onChar = (value: string) => {
-    if (currentGuess.length < 5 && guesses.length < 6) {
+    const valid =
+      currentGuess.length % 2 === 0
+        ? isIntegerUnder10(value)
+        : !isIntegerUnder10(value)
+    if (valid && currentGuess.length !== 9) {
       setCurrentGuess(`${currentGuess}${value}`)
     }
   }
@@ -60,47 +54,51 @@ function App() {
   }
 
   const onEnter = () => {
-    if (!(currentGuess.length === 5)) {
-      setIsNotEnoughLetters(true)
+    if (currentGuess.length !== 9) {
+      setIsIncompleteGuess(true)
+      return setTimeout(setIsIncompleteGuess.bind(false), 2000)
+    }
+    const { sameTotal, sameIntegers } = compareGuesses(currentGuess, GUESS)
+
+    if (!sameTotal) {
+      setIsIncorrectTotalOpen(true)
       return setTimeout(() => {
-        setIsNotEnoughLetters(false)
+        setIsIncorrectTotalOpen(false)
       }, 2000)
     }
-
-    if (!isWordInWordList(currentGuess)) {
-      setIsWordNotFoundAlertOpen(true)
+    if (guesses.length === 4) {
+      setIsGameLost(true)
+      setStats(addStatsForCompletedGame(stats, guesses.length))
       return setTimeout(() => {
-        setIsWordNotFoundAlertOpen(false)
-      }, 2000)
+        setIsGameLost(false)
+      }, 3000)
     }
+    const nextStatuses = getStatuses([currentGuess], GUESS, prevStatuses)
+    setPrevStatuses(nextStatuses)
+    setShareStatuses((shareStatuses) => [...shareStatuses, nextStatuses])
 
-    const winningWord = isWinningWord(currentGuess)
-
-    if (currentGuess.length === 5 && guesses.length < 6 && !isGameWon) {
-      setGuesses([...guesses, currentGuess])
-      setCurrentGuess('')
-
-      if (winningWord) {
-        setStats(addStatsForCompletedGame(stats, guesses.length))
-        return setIsGameWon(true)
-      }
-
-      if (guesses.length === 5) {
-        setStats(addStatsForCompletedGame(stats, guesses.length + 1))
-        setIsGameLost(true)
-        return setTimeout(() => {
-          setIsGameLost(false)
-        }, 2000)
-      }
+    if (sameIntegers) {
+      setStats(addStatsForCompletedGame(stats, guesses.length))
+      return setIsWinModalOpen(true)
     }
+    setGuesses([currentGuess, ...guesses])
+    setCurrentGuess('')
+  }
+
+  const resetGame = () => {
+    setGuesses([])
+    setCurrentGuess('')
+    setPrevStatuses({})
+    setShareStatuses([])
+    setupGame()
   }
 
   return (
     <div className="py-8 max-w-7xl mx-auto sm:px-6 lg:px-8">
-      <Alert message="Not enough letters" isOpen={isNotEnoughLetters} />
-      <Alert message="Word not found" isOpen={isWordNotFoundAlertOpen} />
+      <Alert message="Incomplete Guess" isOpen={isIncompleteGuess} />
+      <Alert message="Incorrect Total" isOpen={isIncorrectTotalOpen} />
       <Alert
-        message={`You lost, the word was ${solution}`}
+        message={`You lost, one possible solution was: ${GUESS}`}
         isOpen={isGameLost}
       />
       <Alert
@@ -109,7 +107,8 @@ function App() {
         variant="success"
       />
       <div className="flex w-80 mx-auto items-center mb-8">
-        <h1 className="text-xl grow font-bold">Not Wordle</h1>
+        <h1 className="text-xl grow font-bold">Numerle</h1>
+        <h2 className="text-xl grow font-bold">Total: {TOTAL}</h2>
         <InformationCircleIcon
           className="h-6 w-6 cursor-pointer"
           onClick={() => setIsInfoModalOpen(true)}
@@ -118,18 +117,27 @@ function App() {
           className="h-6 w-6 cursor-pointer"
           onClick={() => setIsStatsModalOpen(true)}
         />
+        <RefreshIcon
+          className="h-6 w-6 cursor-pointer"
+          onClick={() => resetGame()}
+        />
       </div>
-      <Grid guesses={guesses} currentGuess={currentGuess} />
+      <Grid
+        winningGuess={GUESS}
+        guesses={guesses}
+        currentGuess={currentGuess}
+      />
       <Keyboard
+        winningGuess={GUESS}
         onChar={onChar}
         onDelete={onDelete}
         onEnter={onEnter}
         guesses={guesses}
+        prevStatuses={prevStatuses}
       />
       <WinModal
         isOpen={isWinModalOpen}
         handleClose={() => setIsWinModalOpen(false)}
-        guesses={guesses}
         handleShare={() => {
           setIsWinModalOpen(false)
           setShareComplete(true)
@@ -137,10 +145,13 @@ function App() {
             setShareComplete(false)
           }, 2000)
         }}
+        shareStatuses={shareStatuses}
+        total={TOTAL}
       />
       <InfoModal
         isOpen={isInfoModalOpen}
         handleClose={() => setIsInfoModalOpen(false)}
+        prevStatuses={prevStatuses}
       />
       <StatsModal
         isOpen={isStatsModalOpen}
