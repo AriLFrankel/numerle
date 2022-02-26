@@ -54,20 +54,6 @@ export const getStatuses = (
       } else {
         charObj[letter] = 'present'
       }
-      // if (!solution.includes(letter)) {
-      //   // make status absent
-      //   return (charObj[letter] = 'absent')
-      // }
-
-      // if (solutionCounts[parseInt(solution[i])]) {
-      //   //make status correct
-      //   return (charObj[letter] = 'present')
-      // }
-
-      // if (charObj[letter] !== 'present') {
-      //   //make status present
-      //   return (charObj[letter] = 'present')
-      // }
     })
   })
 
