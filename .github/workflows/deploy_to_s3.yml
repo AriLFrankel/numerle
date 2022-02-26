@@ -22,4 +22,6 @@ jobs:
 
       - name: Build and push bundle to s3
         id: build-and-ship-bundle
-        run: npm run build
+        run: |
+          npm install
+          npm run build
