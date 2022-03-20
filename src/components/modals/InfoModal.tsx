@@ -126,7 +126,10 @@ export const InfoModal = ({ isOpen, handleClose, prevStatuses }: Props) => {
                       combined to arrive at the TOTAL. Guess the NUMERLE in 6
                       tries. After each guess, the color of the keys will change
                       to show how close your guess was to the right combination
-                      of numbers.
+                      of numbers. Green means correct integer and correct number
+                      of appearances of that integer. Yellow means correct
+                      integer but incorrect number of appearances of that
+                      integer
                     </p>
                     <h4>Total: {infoTOTAL}</h4>
                     {infoCopy.map(({ guess, message, statuses }, i) => (
