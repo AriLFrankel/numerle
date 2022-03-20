@@ -1,5 +1,5 @@
 import { NUMBERS, OPERATORS } from '../constants/numbers'
-import { evaluate } from 'mathjs'
+import { evaluate, round } from 'mathjs'
 import isequal from 'lodash.isequal'
 
 export const isIntegerUnder10 = (char: string) => {
@@ -21,7 +21,7 @@ export function getRandomSubset<Type>(
   )
 }
 
-export const getTotal = (guess: string): number => evaluate(guess)
+export const getTotal = (guess: string): number => round(evaluate(guess), 2)
 
 export const getNumber = (): {
   total: number
