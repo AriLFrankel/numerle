@@ -9,7 +9,12 @@ import { InfoModal } from './components/modals/InfoModal'
 import { WinModal } from './components/modals/WinModal'
 import { StatsModal } from './components/modals/StatsModal'
 import { addStatsForCompletedGame, loadStats } from './lib/stats'
-import { isIntegerUnder10, getNumber, compareGuesses } from './lib/arithmetic'
+import {
+  isIntegerUnder10,
+  getNumber,
+  compareGuesses,
+  getTotal,
+} from './lib/arithmetic'
 import { getStatuses, StatusObj } from './lib/statuses'
 
 function App() {
@@ -25,6 +30,7 @@ function App() {
   const [guesses, setGuesses] = useState<string[]>(() => [])
   const [prevStatuses, setPrevStatuses] = useState<StatusObj>(() => ({}))
   const [shareStatuses, setShareStatuses] = useState<StatusObj[]>(() => [])
+  const [runningTotal, setRunningTotal] = useState<string>(() => '0')
 
   const [stats, setStats] = useState(() => loadStats())
 
@@ -40,12 +46,16 @@ function App() {
   useEffect(setupGame, [])
 
   const onChar = (value: string) => {
-    const valid =
-      currentGuess.length % 2 === 0
-        ? isIntegerUnder10(value)
-        : !isIntegerUnder10(value)
+    const shouldBeInteger = currentGuess.length % 2 === 0
+    const newCurrentGuess = `${currentGuess}${value}`
+    const valid = shouldBeInteger
+      ? isIntegerUnder10(value)
+      : !isIntegerUnder10(value)
     if (valid && currentGuess.length !== 9) {
-      setCurrentGuess(`${currentGuess}${value}`)
+      if (shouldBeInteger) {
+        setRunningTotal(String(getTotal(newCurrentGuess)))
+      }
+      setCurrentGuess(newCurrentGuess)
     }
   }
 
@@ -82,6 +92,7 @@ function App() {
       return setIsWinModalOpen(true)
     }
     setGuesses([currentGuess, ...guesses])
+    setRunningTotal('0')
     setCurrentGuess('')
   }
 
@@ -90,6 +101,7 @@ function App() {
     setCurrentGuess('')
     setPrevStatuses({})
     setShareStatuses([])
+    setRunningTotal('0')
     setupGame()
   }
 
@@ -126,6 +138,7 @@ function App() {
         winningGuess={GUESS}
         guesses={guesses}
         currentGuess={currentGuess}
+        runningTotal={runningTotal}
       />
       <Keyboard
         winningGuess={GUESS}

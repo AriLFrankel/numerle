@@ -21,7 +21,7 @@ export function getRandomSubset<Type>(
   )
 }
 
-const getTotal = (guess: string): number => evaluate(guess)
+export const getTotal = (guess: string): number => evaluate(guess)
 
 export const getNumber = (): {
   total: number
